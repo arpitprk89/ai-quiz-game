@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Quiz Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d2b26;
+    --panel:#123832;
+    --panel-raised:#164039;
+    --line:#245149;
+    --gold:#d4b483;
+    --gold-soft:rgba(212,180,131,.16);
+    --cream:#f4efe4;
+    --dim:#9fb8b0;
+    --wrong:#c76a5a;
+    --right:#7fae7a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--cream);font-family:'IBM Plex Mono',monospace;min-height:100vh;}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 24px 80px;}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:34px;flex-wrap:wrap;gap:16px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(26px,4vw,40px);margin:0;color:var(--cream);letter-spacing:-.01em;}
+  .tag{color:var(--gold);font-size:12.5px;margin-top:8px;max-width:460px;line-height:1.55;}
+  .score-badge{font-size:12px;color:var(--dim);text-align:right;line-height:1.7;}
+  .score-badge b{color:var(--gold);font-size:20px;font-family:'Fraunces',serif;}
+
+  .progressbar{height:3px;background:var(--panel-raised);margin-bottom:34px;position:relative;}
+  .progressfill{height:100%;background:var(--gold);transition:width .4s ease;}
+
+  .card{background:var(--panel);border:1px solid var(--line);padding:34px;}
+  .qnum{font-size:11px;color:var(--dim);letter-spacing:.02em;margin-bottom:14px;}
+  .question{font-family:'Fraunces',serif;font-size:clamp(19px,2.6vw,25px);line-height:1.4;margin:0 0 28px;color:var(--cream);}
+
+  .choices{display:flex;flex-direction:column;gap:11px;}
+  .choice{
+    text-align:left;background:var(--panel-raised);border:1px solid var(--line);color:var(--cream);
+    padding:15px 18px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;
+    display:flex;align-items:center;gap:12px;transition:border-color .15s ease, background .15s ease;
+  }
+  .choice:hover:not(:disabled){border-color:var(--gold);background:var(--gold-soft);}
+  .choice .letter{width:22px;height:22px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim);flex-shrink:0;}
+  .choice.correct{border-color:var(--right);background:rgba(127,174,122,.14);}
+  .choice.correct .letter{border-color:var(--right);color:var(--right);}
+  .choice.wrong{border-color:var(--wrong);background:rgba(199,106,90,.14);}
+  .choice.wrong .letter{border-color:var(--wrong);color:var(--wrong);}
+  .choice:disabled{cursor:default;}
+
+  .explain{margin-top:22px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.65;color:var(--dim);display:none;}
+  .explain.show{display:block;}
+  .explain b{color:var(--gold);}
+
+  .nextbtn{margin-top:22px;background:var(--gold);color:#123832;border:none;padding:12px 22px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;cursor:pointer;display:none;}
+  .nextbtn.show{display:inline-block;}
+  .nextbtn:hover{opacity:.88;}
+
+  .result{text-align:center;padding:50px 20px;}
+  .result .big{font-family:'Fraunces',serif;font-size:56px;color:var(--gold);margin-bottom:8px;}
+  .result .line{color:var(--dim);font-size:13px;margin-bottom:30px;}
+  .result .verdict{font-family:'Fraunces',serif;font-size:20px;color:var(--cream);margin-bottom:30px;}
+  .restart{background:none;border:1px solid var(--gold);color:var(--gold);padding:12px 26px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;cursor:pointer;}
+  .restart:hover{background:var(--gold-soft);}
+
+  footer{margin-top:54px;border-top:1px solid var(--line);padding-top:20px;font-size:11px;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  footer a{color:var(--gold);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>AI Quiz Game</h1>
+      <div class="tag">Ten questions on the ideas behind artificial intelligence — how models learn, decide, and where they go wrong.</div>
+    </div>
+    <div class="score-badge">SCORE<br><b id="scoreLive">0 / 0</b></div>
+  </header>
+
+  <div class="progressbar"><div class="progressfill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="card" id="quizCard">
+    <div class="qnum" id="qnum">Question 1 of 10</div>
+    <div class="question" id="questionText"></div>
+    <div class="choices" id="choicesBox"></div>
+    <div class="explain" id="explainBox"></div>
+    <button class="nextbtn" id="nextBtn">Next question →</button>
+  </div>
+
+  <footer>
+    <span>AI Quiz Game — a self-taught project on core AI and ML ideas.</span>
+    <span><a href="https://github.com/arpitprk89" target="_blank">github.com/arpitprk89</a></span>
+  </footer>
+
+</div>
+
+<script>
+const questions = [
+  {
+    q: "In supervised learning, what does the model learn from?",
+    choices: ["Labeled examples with known correct answers", "Random noise with no structure", "Only the model's own past predictions", "Rules written directly by a programmer"],
+    correct: 0,
+    explain: "Supervised learning trains on input-output pairs where the correct answer is already known, so the model can adjust itself to reduce the gap between its prediction and the true label."
+  },
+  {
+    q: "What is 'overfitting' in a machine learning model?",
+    choices: ["The model trains too slowly", "The model performs well on training data but poorly on new data", "The model uses too little memory", "The model only works on images"],
+    correct: 1,
+    explain: "An overfit model has essentially memorised the training set, including its noise, so it fails to generalise to data it hasn't seen before."
+  },
+  {
+    q: "In Bayesian inference, what does a 'prior' represent?",
+    choices: ["The final answer after seeing all data", "A belief held before observing new evidence", "The error rate of a model", "A type of neural network layer"],
+    correct: 1,
+    explain: "A prior is the starting belief about a hypothesis, before new evidence arrives. Bayesian inference updates this prior using new data to form a posterior belief."
+  },
+  {
+    q: "What does 'reinforcement learning' primarily rely on?",
+    choices: ["Labeled datasets prepared in advance", "Rewards and penalties from interacting with an environment", "Manually written if-else rules", "Sorting data into clusters"],
+    correct: 1,
+    explain: "In reinforcement learning, an agent takes actions in an environment and learns from the rewards or penalties that follow, gradually improving its strategy through trial and feedback."
+  },
+  {
+    q: "What is a 'neural network' loosely inspired by?",
+    choices: ["Stock market trends", "The structure of biological neurons in the brain", "Traffic flow patterns", "Weather prediction models"],
+    correct: 1,
+    explain: "Neural networks are loosely modeled on how biological neurons connect and pass signals, using layers of simple units that combine to represent complex patterns."
+  },
+  {
+    q: "Why is a 'decision boundary' important in classification?",
+    choices: ["It measures how fast the model trains", "It separates data points into different predicted classes", "It stores the model's memory", "It controls the model's file size"],
+    correct: 1,
+    explain: "A decision boundary is the line (or surface, in higher dimensions) a classifier learns to divide the input space into regions that correspond to different predicted classes."
+  },
+  {
+    q: "What is 'cognitive load', a concept sometimes modeled in learning-support tools?",
+    choices: ["The physical weight of study material", "The amount of mental effort being used in working memory", "The number of subjects a student takes", "A school's internet bandwidth"],
+    correct: 1,
+    explain: "Cognitive load refers to the amount of mental effort being used in working memory at a given time — a concept borrowed from cognitive psychology, not something a model measures directly, but often approximated in learning-support tools."
+  },
+  {
+    q: "What is one common risk of a purely rule-based (non-learning) AI system?",
+    choices: ["It always overfits to training data", "It cannot handle situations its rules didn't anticipate", "It requires GPUs to run", "It automatically learns new languages"],
+    correct: 1,
+    explain: "Rule-based systems only do what their explicit rules cover; they have no mechanism to adapt to new situations the rule-writer did not foresee, unlike learning-based systems."
+  },
+  {
+    q: "In a Q-learning agent exploring a grid, what does 'exploration vs. exploitation' refer to?",
+    choices: ["Choosing between trying new actions and using the best-known action", "Choosing between two different programming languages", "Deciding how much memory to allocate", "Choosing the screen resolution"],
+    correct: 0,
+    explain: "Exploration means trying new, possibly unproven actions to discover their value; exploitation means using the action currently believed to be best. Balancing the two is central to reinforcement learning."
+  },
+  {
+    q: "Why do responsible AI projects usually state their limitations openly?",
+    choices: ["It is legally required in every country", "It helps users judge what the tool can and cannot be trusted for", "It makes the code run faster", "It is unrelated to how the tool is used"],
+    correct: 1,
+    explain: "Clearly stating a model's limitations — what it wasn't trained on, where its assumptions break down — helps anyone using it judge how much to trust its output, which matters most for tools that touch real decisions."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+function render(){
+  const q = questions[current];
+  document.getElementById('qnum').textContent = `Question ${current+1} of ${questions.length}`;
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('progressFill').style.width = ((current)/questions.length*100) + '%';
+  document.getElementById('scoreLive').textContent = `${score} / ${current}`;
+
+  const letters = ['A','B','C','D'];
+  const box = document.getElementById('choicesBox');
+  box.innerHTML = q.choices.map((c,i) => `
+    <button class="choice" data-i="${i}"><span class="letter">${letters[i]}</span><span>${c}</span></button>
+  `).join('');
+
+  document.querySelectorAll('.choice').forEach(btn=>{
+    btn.addEventListener('click', () => selectAnswer(parseInt(btn.dataset.i)));
+  });
+
+  document.getElementById('explainBox').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  answered = false;
+}
+
+function selectAnswer(i){
+  if(answered) return;
+  answered = true;
+  const q = questions[current];
+  const buttons = document.querySelectorAll('.choice');
+  buttons.forEach(b=>b.disabled=true);
+
+  buttons[q.correct].classList.add('correct');
+  if(i !== q.correct){
+    buttons[i].classList.add('wrong');
+  } else {
+    score++;
+  }
+
+  document.getElementById('explainBox').innerHTML = `<b>${i===q.correct ? 'Correct.' : 'Not quite.'}</b> ${q.explain}`;
+  document.getElementById('explainBox').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+  document.getElementById('scoreLive').textContent = `${score} / ${current+1}`;
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  current++;
+  if(current >= questions.length){
+    showResult();
+  } else {
+    render();
+  }
+});
+
+function showResult(){
+  document.getElementById('progressFill').style.width = '100%';
+  const pct = Math.round((score/questions.length)*100);
+  let verdict;
+  if(pct >= 90) verdict = "Strong grasp of the core ideas.";
+  else if(pct >= 70) verdict = "Solid understanding, a few gaps worth revisiting.";
+  else if(pct >= 50) verdict = "Halfway there — the fundamentals need another pass.";
+  else verdict = "A good starting point to build from.";
+
+  document.getElementById('quizCard').innerHTML = `
+    <div class="result">
+      <div class="big">${score}/${questions.length}</div>
+      <div class="line">${pct}% correct</div>
+      <div class="verdict">${verdict}</div>
+      <button class="restart" id="restartBtn">Play again</button>
+    </div>
+  `;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0; answered = false;
+    document.getElementById('quizCard').innerHTML = `
+      <div class="qnum" id="qnum"></div>
+      <div class="question" id="questionText"></div>
+      <div class="choices" id="choicesBox"></div>
+      <div class="explain" id="explainBox"></div>
+      <button class="nextbtn" id="nextBtn">Next question →</button>
+    `;
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      current++;
+      if(current >= questions.length){ showResult(); } else { render(); }
+    });
+    render();
+  });
+}
+
+render();
+</script>
+</body>
+</html>
